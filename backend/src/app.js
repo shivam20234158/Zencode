@@ -1,6 +1,8 @@
 //Express app banayega
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+import authRouter from "./routes/auth.routes.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -22,6 +24,7 @@ app.use(
         credentials: true,
     })
 );
+app.use("/api/auth",authRouter)
 
 app.get("/", (req, res) => {
     res.send("Backend is Running 🚀");
