@@ -1,6 +1,63 @@
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import toast from "react-hot-toast";
+
+import { loginUser } from "../store/authSlice";
 
 function Login() {
+
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
+    const { loading, error, isAuthenticated } = useSelector(
+        (state) => state.auth
+    );
+
+    const [formData, setFormData] = useState({
+        emailId: "",
+        password: "",
+    });
+
+    const handleChange = (e) => {
+
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value,
+        });
+
+    };
+
+    const handleSubmit = async (e) => {
+
+        e.preventDefault();
+
+        if (!formData.emailId || !formData.password) {
+            toast.error("Please fill all fields");
+            return;
+        }
+
+        const result = await dispatch(loginUser(formData));
+
+        if (loginUser.fulfilled.match(result)) {
+
+            toast.success("Login Successful");
+
+        } else {
+
+            toast.error(result.payload || "Invalid Credentials");
+
+        }
+
+    };
+
+    useEffect(() => {
+
+        if (isAuthenticated) {
+            navigate("/");
+        }
+
+    }, [isAuthenticated, navigate]);
 
     return (
 
@@ -14,27 +71,44 @@ function Login() {
                         Login
                     </h2>
 
-                    <form className="space-y-4 mt-4">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="space-y-4 mt-4"
+                    >
 
                         <input
                             type="email"
+                            name="emailId"
                             placeholder="Email"
                             className="input input-bordered w-full"
+                            value={formData.emailId}
+                            onChange={handleChange}
                         />
 
                         <input
                             type="password"
+                            name="password"
                             placeholder="Password"
                             className="input input-bordered w-full"
+                            value={formData.password}
+                            onChange={handleChange}
                         />
 
                         <button
+                            type="submit"
                             className="btn btn-primary w-full"
+                            disabled={loading}
                         >
-                            Login
+                            {loading ? "Logging In..." : "Login"}
                         </button>
 
                     </form>
+
+                    {error && (
+                        <p className="text-center text-red-500 mt-2">
+                            {error}
+                        </p>
+                    )}
 
                     <p className="text-center mt-4">
 
