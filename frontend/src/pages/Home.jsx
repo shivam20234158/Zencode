@@ -1,8 +1,15 @@
 import { Link } from "react-router-dom";
 import { FaCode, FaRobot, FaVideo, FaLaptopCode } from "react-icons/fa";
+import { useSelector } from "react-redux";
 
 function Home() {
+
+    const { isAuthenticated } = useSelector(
+        (state) => state.auth
+    );
+
     return (
+
         <div className="min-h-[calc(100vh-64px)] bg-base-200">
 
             {/* Hero Section */}
@@ -20,8 +27,8 @@ function Home() {
 
                         <p className="py-6 text-lg text-gray-500">
                             Practice coding problems, execute code instantly,
-                            get AI-powered hints, watch editorial videos and
-                            track your progress — all in one platform.
+                            get AI-powered hints, watch editorial videos,
+                            and track your progress — all in one platform.
                         </p>
 
                         <div className="flex justify-center gap-5">
@@ -30,14 +37,18 @@ function Home() {
                                 to="/problems"
                                 className="btn btn-primary btn-lg"
                             >
-                                Start Solving
+                                {isAuthenticated
+                                    ? "Continue Solving"
+                                    : "Start Solving"}
                             </Link>
 
                             <Link
-                                to="/register"
+                                to={isAuthenticated ? "/profile" : "/register"}
                                 className="btn btn-outline btn-lg"
                             >
-                                Get Started
+                                {isAuthenticated
+                                    ? "My Profile"
+                                    : "Get Started"}
                             </Link>
 
                         </div>
@@ -62,17 +73,15 @@ function Home() {
 
                         <div className="card-body items-center text-center">
 
-                            <FaLaptopCode
-                                className="text-5xl text-primary"
-                            />
+                            <FaLaptopCode className="text-5xl text-primary" />
 
                             <h2 className="card-title">
                                 Code Editor
                             </h2>
 
                             <p>
-                                Solve problems with Monaco Editor and
-                                multiple programming languages.
+                                Solve problems using Monaco Editor with
+                                support for multiple programming languages.
                             </p>
 
                         </div>
@@ -83,16 +92,14 @@ function Home() {
 
                         <div className="card-body items-center text-center">
 
-                            <FaRobot
-                                className="text-5xl text-primary"
-                            />
+                            <FaRobot className="text-5xl text-primary" />
 
                             <h2 className="card-title">
                                 AI Assistant
                             </h2>
 
                             <p>
-                                Ask doubts, receive hints and understand
+                                Ask doubts, receive hints, and understand
                                 optimal solutions instantly.
                             </p>
 
@@ -104,17 +111,15 @@ function Home() {
 
                         <div className="card-body items-center text-center">
 
-                            <FaVideo
-                                className="text-5xl text-primary"
-                            />
+                            <FaVideo className="text-5xl text-primary" />
 
                             <h2 className="card-title">
                                 Editorial Videos
                             </h2>
 
                             <p>
-                                Learn visually with video explanations
-                                for every coding problem.
+                                Learn visually with detailed editorial
+                                videos for every coding problem.
                             </p>
 
                         </div>
@@ -125,17 +130,15 @@ function Home() {
 
                         <div className="card-body items-center text-center">
 
-                            <FaCode
-                                className="text-5xl text-primary"
-                            />
+                            <FaCode className="text-5xl text-primary" />
 
                             <h2 className="card-title">
                                 Judge0 Compiler
                             </h2>
 
                             <p>
-                                Run and submit code using Judge0 with
-                                real-time execution results.
+                                Run and submit code instantly using the
+                                integrated Judge0 compiler.
                             </p>
 
                         </div>
@@ -147,7 +150,9 @@ function Home() {
             </div>
 
         </div>
+
     );
+
 }
 
 export default Home;
