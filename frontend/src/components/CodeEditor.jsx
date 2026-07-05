@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Editor from "@monaco-editor/react";
+import axiosClient from "../utils/axiosClient";
+import { FaPlay, FaCloudUploadAlt } from "react-icons/fa";
+import toast from "react-hot-toast";
 
 const languageMap = {
     cpp: "cpp",
@@ -8,10 +11,23 @@ const languageMap = {
     javascript: "javascript",
 };
 
-function CodeEditor({ problem }) {
+function CodeEditor({
 
-    const [language, setLanguage] = useState("cpp");
-    const [code, setCode] = useState("");
+    problem,
+
+    language,
+
+    setLanguage,
+
+    code,
+
+    setCode,
+
+    setRunResult,
+
+    setSubmitResult,
+
+}) {
 
     useEffect(() => {
 
@@ -22,43 +38,169 @@ function CodeEditor({ problem }) {
         );
 
         if (starter) {
+
             setCode(starter.initialCode);
+
         }
 
-    }, [problem, language]);
+    }, [language, problem]);
+
+    async function runCode() {
+
+        try {
+
+            const { data } = await axiosClient.post(
+
+                `/submission/run/${problem._id}`,
+
+                {
+
+                    language,
+
+                    code,
+
+                }
+
+            );
+
+            setRunResult(data);
+
+            setSubmitResult(null);
+
+            toast.success("Code Executed Successfully");
+
+        }
+
+        catch (err) {
+
+            toast.error(
+
+                err.response?.data?.message ||
+
+                "Execution Failed"
+
+            );
+
+        }
+
+    }
+
+    async function submitCode() {
+
+        try {
+
+            const { data } = await axiosClient.post(
+
+                `/submission/submit/${problem._id}`,
+
+                {
+
+                    language,
+
+                    code,
+
+                }
+
+            );
+
+            setSubmitResult(data);
+
+            setRunResult(null);
+
+            toast.success("Submission Complete");
+
+        }
+
+        catch (err) {
+
+            toast.error(
+
+                err.response?.data?.message ||
+
+                "Submission Failed"
+
+            );
+
+        }
+
+    }
 
     return (
 
-        <div className="h-full flex flex-col">
+        <div className="flex flex-col h-full">
 
-            {/* Top Bar */}
+            {/* Header */}
 
-            <div className="border-b p-4 flex justify-between items-center bg-base-200">
+            <div className="flex justify-between items-center p-4 border-b bg-base-200">
 
                 <select
+
                     className="select select-bordered"
+
                     value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
+
+                    onChange={(e) =>
+
+                        setLanguage(e.target.value)
+
+                    }
+
                 >
 
-                    <option value="cpp">C++</option>
+                    <option value="cpp">
 
-                    <option value="java">Java</option>
+                        C++
 
-                    <option value="python">Python</option>
+                    </option>
 
-                    <option value="javascript">JavaScript</option>
+                    <option value="java">
+
+                        Java
+
+                    </option>
+
+                    <option value="python">
+
+                        Python
+
+                    </option>
+
+                    <option value="javascript">
+
+                        JavaScript
+
+                    </option>
 
                 </select>
 
                 <div className="space-x-3">
 
-                    <button className="btn btn-outline">
+                    <button
+
+                        className="btn btn-outline"
+
+                        onClick={runCode}
+
+                    >
+
+                        <FaPlay />
+
                         Run
+
                     </button>
 
-                    <button className="btn btn-primary">
+                    <button
+
+                        className="btn btn-primary"
+
+                        onClick={submitCode}
+
+                    >
+
+                        <FaCloudUploadAlt />
+
                         Submit
+
                     </button>
 
                 </div>
@@ -70,34 +212,40 @@ function CodeEditor({ problem }) {
             <div className="flex-1">
 
                 <Editor
+
                     height="100%"
+
                     language={languageMap[language]}
+
                     theme="vs-dark"
+
                     value={code}
-                    onChange={(value) => setCode(value)}
+
+                    onChange={(value) =>
+
+                        setCode(value || "")
+
+                    }
+
                     options={{
-                        fontSize: 15,
+
                         minimap: {
+
                             enabled: false,
+
                         },
+
                         automaticLayout: true,
+
+                        fontSize: 15,
+
                         scrollBeyondLastLine: false,
+
+                        tabSize: 4,
+
                     }}
+
                 />
-
-            </div>
-
-            {/* Output */}
-
-            <div className="border-t p-4 bg-base-100 h-40 overflow-auto">
-
-                <h2 className="font-bold mb-2">
-                    Output
-                </h2>
-
-                <p className="text-gray-500">
-                    Run your code to see output.
-                </p>
 
             </div>
 
