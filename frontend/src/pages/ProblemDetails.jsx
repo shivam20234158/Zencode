@@ -35,7 +35,7 @@ function ProblemDetails() {
         try {
 
             const { data } = await axiosClient.get(
-                `/problem/${problemId}`
+                `/problems/${problemId}`
             );
 
             setProblem(data);
