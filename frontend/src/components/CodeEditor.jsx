@@ -51,7 +51,7 @@ function CodeEditor({
 
             const { data } = await axiosClient.post(
 
-                `/submission/run/${problem._id}`,
+                `/submissions/run/${problem._id}`,
 
                 {
 
@@ -91,7 +91,7 @@ function CodeEditor({
 
             const { data } = await axiosClient.post(
 
-                `/submission/submit/${problem._id}`,
+                `/submissions/submit/${problem._id}`,
 
                 {
 
