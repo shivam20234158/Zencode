@@ -1,7 +1,8 @@
 import axios from "axios";
+const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:5001/api" : "/api";
 
 const axiosClient = axios.create({
-    baseURL: "http://localhost:5001/api",
+    baseURL: BASE_URL,
     withCredentials: true,
 });
 
@@ -23,7 +24,7 @@ axiosClient.interceptors.response.use(
             try {
 
                 await axios.post(
-                    "http://localhost:5001/api/auth/refresh",
+                    `${BASE_URL}/auth/refresh`,
                     {},
                     {
                         withCredentials: true,

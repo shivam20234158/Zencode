@@ -33,8 +33,10 @@ app.use("/api/problems",problemRouter)
 app.use("/api/submissions", submissionRouter);
 app.use("/api/videos",videoRouter)
 app.use("/api/ai",aiRouter)
-app.get("/", (req, res) => {
-    res.send("Backend is Running 🚀");
-});
+if (process.env.NODE_ENV !== "production") {
+    app.get("/", (req, res) => {
+        res.send("Backend is Running 🚀");
+    });
+}
 
 export default app;
