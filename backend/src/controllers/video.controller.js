@@ -1,6 +1,6 @@
 import cloudinary from "../config/cloudinary.js";
 import Problem from "../models/problem.model.js";
-import SolutionVideo from "../models/SolutionVideo.model.js";
+import SolutionVideo from "../models/solutionVideo.model.js";
 
 export const generateUploadSignature = async (req, res) => {
 

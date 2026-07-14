@@ -1,4 +1,4 @@
-import SolutionVideo from "../models/SolutionVideo.model.js";
+import SolutionVideo from "../models/solutionVideo.model.js";
 import Problem from "../models/problem.model.js";
 import { getLanguageById } from "../utils/problemUtility.js";
 
