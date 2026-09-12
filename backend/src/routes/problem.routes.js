@@ -14,9 +14,9 @@ import adminMiddleware from "../middleware/admin.middleware.js";
 const problemRouter = express.Router();
 
 // Public / Logged-in user
-problemRouter.get("/", userMiddleware, getAllProblems);
+problemRouter.get("/", getAllProblems);
 
-problemRouter.get("/:id", userMiddleware, getProblemById);
+problemRouter.get("/:id", getProblemById);
 
 // Admin only
 problemRouter.post(
