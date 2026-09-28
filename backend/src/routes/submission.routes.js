@@ -5,6 +5,7 @@ import {
     submitCode,
     getSubmissionHistory,
     getSolvedProblems,
+    getSubmissionStatus,
 } from "../controllers/submission.controller.js";
 
 import userMiddleware from "../middleware/user.middleware.js";
@@ -21,6 +22,12 @@ submissionRouter.post(
     "/submit/:problemId",
     userMiddleware,
     submitCode
+);
+
+submissionRouter.get(
+    "/status/:submissionId",
+    userMiddleware,
+    getSubmissionStatus
 );
 
 submissionRouter.get(

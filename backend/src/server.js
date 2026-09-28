@@ -3,6 +3,7 @@
 import dotenv from "dotenv";
 import app from "./app.js";
 import connectDB from "./config/db.js";
+import { startWorker } from "./workers/submission.worker.js";
 import { fileURLToPath } from "url";
 import path from "path";
 import express from "express";
@@ -25,6 +26,7 @@ if (process.env.NODE_ENV === "production") {
 const startServer = async () => {
     try {
         await connectDB();
+        startWorker();
         app.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
         });

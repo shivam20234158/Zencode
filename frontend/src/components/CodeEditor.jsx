@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import axiosClient from "../utils/axiosClient";
 import { FaPlay, FaCloudUploadAlt } from "react-icons/fa";
@@ -29,6 +29,18 @@ function CodeEditor({
 
 }) {
 
+    const [isRunning, setIsRunning] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const pollIntervalRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+            }
+        };
+    }, []);
+
     useEffect(() => {
 
         if (!problem) return;
@@ -47,7 +59,11 @@ function CodeEditor({
 
     async function runCode() {
 
+        if (isRunning || isSubmitting) return;
+
         try {
+
+            setIsRunning(true);
 
             const { data } = await axiosClient.post(
 
@@ -81,13 +97,28 @@ function CodeEditor({
 
             );
 
+        } finally {
+
+            setIsRunning(false);
+
         }
 
     }
 
     async function submitCode() {
 
+        if (isSubmitting || isRunning) return;
+
+        if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+        }
+
         try {
+
+            setIsSubmitting(true);
+            setRunResult(null);
+            setSubmitResult({ status: "queued", loading: true });
 
             const { data } = await axiosClient.post(
 
@@ -103,20 +134,78 @@ function CodeEditor({
 
             );
 
-            setSubmitResult(data);
+            const submissionId = data.submissionId;
 
-            setRunResult(null);
+            if (!submissionId) {
+                throw new Error("No submission ID returned");
+            }
 
-            toast.success("Submission Complete");
+            toast("Code queued for execution...", {
+                icon: "⏳",
+            });
+
+            let attempts = 0;
+            const maxAttempts = 40; // 40 * 1.5s = 60s timeout
+
+            pollIntervalRef.current = setInterval(async () => {
+                attempts++;
+                try {
+                    const { data: statusData } = await axiosClient.get(
+                        `/submissions/status/${submissionId}`
+                    );
+
+                    if (statusData.status === "queued" || statusData.status === "processing") {
+                        setSubmitResult({
+                            ...statusData,
+                            loading: true,
+                        });
+
+                        if (attempts >= maxAttempts) {
+                            clearInterval(pollIntervalRef.current);
+                            pollIntervalRef.current = null;
+                            setIsSubmitting(false);
+                            setSubmitResult({
+                                status: "error",
+                                errorMessage: "Execution timed out. Please check submission history.",
+                            });
+                            toast.error("Execution timed out");
+                        }
+                    } else {
+                        // Execution completed
+                        clearInterval(pollIntervalRef.current);
+                        pollIntervalRef.current = null;
+                        setIsSubmitting(false);
+                        setSubmitResult(statusData);
+
+                        if (statusData.accepted) {
+                            toast.success("Accepted! All test cases passed 🎉");
+                        } else if (statusData.status === "wrong") {
+                            toast.error("Wrong Answer ❌");
+                        } else {
+                            toast.error(statusData.errorMessage || "Submission Failed");
+                        }
+                    }
+                } catch (pollErr) {
+                    console.error("Polling error:", pollErr);
+                    if (attempts >= maxAttempts) {
+                        clearInterval(pollIntervalRef.current);
+                        pollIntervalRef.current = null;
+                        setIsSubmitting(false);
+                        toast.error("Failed to check submission status");
+                    }
+                }
+            }, 1500);
 
         }
 
         catch (err) {
 
+            setIsSubmitting(false);
+            setSubmitResult(null);
             toast.error(
 
                 err.response?.data?.message ||
-
+                err.message ||
                 "Submission Failed"
 
             );
@@ -181,9 +270,15 @@ function CodeEditor({
 
                         onClick={runCode}
 
+                        disabled={isRunning || isSubmitting}
+
                     >
 
-                        <FaPlay />
+                        {isRunning ? (
+                            <span className="loading loading-spinner loading-xs"></span>
+                        ) : (
+                            <FaPlay />
+                        )}
 
                         Run
 
@@ -195,11 +290,17 @@ function CodeEditor({
 
                         onClick={submitCode}
 
+                        disabled={isSubmitting || isRunning}
+
                     >
 
-                        <FaCloudUploadAlt />
+                        {isSubmitting ? (
+                            <span className="loading loading-spinner loading-xs"></span>
+                        ) : (
+                            <FaCloudUploadAlt />
+                        )}
 
-                        Submit
+                        {isSubmitting ? "Processing..." : "Submit"}
 
                     </button>
 

@@ -63,6 +63,13 @@ export const executeCode = async (
         }
     }
 
+    if (!testResults || testResults.length === 0 || testCasesPassed !== testCases.length) {
+        success = false;
+        if (!errorMessage && testCases.length > 0) {
+            errorMessage = "Execution failed or returned no response from Judge0";
+        }
+    }
+
     return {
         success,
         runtime,

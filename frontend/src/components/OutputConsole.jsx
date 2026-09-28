@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FaTerminal, FaCheckCircle, FaTimesCircle, FaPlay, FaExclamationTriangle } from "react-icons/fa";
+import { FaTerminal, FaCheckCircle, FaTimesCircle, FaPlay, FaExclamationTriangle, FaHourglassHalf, FaCog } from "react-icons/fa";
 
 function OutputConsole({ runResult, submitResult, problem }) {
     const [activeTab, setActiveTab] = useState("testcase");
@@ -46,7 +46,11 @@ function OutputConsole({ runResult, submitResult, problem }) {
                         Result
                         {(runResult || submitResult) && (
                             <span className={`ml-1.5 w-2 h-2 rounded-full ${
-                                (runResult?.success || submitResult?.accepted) ? "bg-success" : "bg-error"
+                                (submitResult?.status === "queued" || submitResult?.status === "processing")
+                                    ? "bg-warning animate-pulse"
+                                    : (runResult?.success || submitResult?.accepted)
+                                    ? "bg-success"
+                                    : "bg-error"
                             }`}></span>
                         )}
                     </button>
@@ -204,56 +208,92 @@ function OutputConsole({ runResult, submitResult, problem }) {
 
                         {/* If Submit Result exists */}
                         {submitResult && (
-                            <div className="space-y-3 grow flex flex-col justify-center max-w-md mx-auto py-4">
-                                <div className={`text-center p-6 rounded-xl border ${
-                                    submitResult.accepted 
-                                        ? "bg-success/15 border-success text-success"
-                                        : "bg-error/15 border-error text-error"
-                                }`}>
-                                    {submitResult.accepted ? (
-                                        <>
-                                            <FaCheckCircle className="text-5xl mx-auto mb-3" />
-                                            <h2 className="text-2xl font-bold">Accepted 🎉</h2>
-                                            <p className="text-sm mt-1 text-base-content/85">All test cases passed successfully!</p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <FaTimesCircle className="text-5xl mx-auto mb-3" />
-                                            <h2 className="text-2xl font-bold">Rejected ❌</h2>
-                                            <p className="text-sm mt-1 text-base-content/85">
-                                                {submitResult.errorMessage?.includes("Compilation") ? "Compilation Error" : "Failed on some test cases"}
-                                            </p>
-                                        </>
+                            submitResult.status === "queued" || submitResult.status === "processing" ? (
+                                <div className="space-y-4 grow flex flex-col justify-center max-w-md mx-auto py-6">
+                                    <div className="bg-base-100 border border-base-200 p-6 rounded-2xl shadow-xl text-center relative overflow-hidden">
+                                        <div className="absolute top-0 left-0 right-0 h-1 bg-primary/20 overflow-hidden">
+                                            <div className="h-full bg-primary animate-pulse w-full"></div>
+                                        </div>
+
+                                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                            {submitResult.status === "queued" ? (
+                                                <FaHourglassHalf className="text-2xl animate-bounce" />
+                                            ) : (
+                                                <FaCog className="text-3xl animate-spin" />
+                                            )}
+                                        </div>
+
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 mb-2">
+                                            <span className="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+                                            {submitResult.status === "queued" ? "Queued in Message Broker" : "Executing with Judge0"}
+                                        </div>
+
+                                        <h3 className="text-lg font-bold text-base-content mt-1">
+                                            {submitResult.status === "queued" ? "Waiting in Queue..." : "Evaluating Test Cases..."}
+                                        </h3>
+                                        <p className="text-xs text-base-content/60 mt-1.5 max-w-xs mx-auto">
+                                            {submitResult.status === "queued"
+                                                ? "Your submission has been dispatched to the BullMQ queue and is waiting for a background worker."
+                                                : "A worker is running your code against all test cases. Polling for verdict..."}
+                                        </p>
+
+                                        <div className="mt-5 flex justify-center">
+                                            <span className="loading loading-dots loading-md text-primary"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-3 grow flex flex-col justify-center max-w-md mx-auto py-4">
+                                    <div className={`text-center p-6 rounded-xl border ${
+                                        submitResult.accepted 
+                                            ? "bg-success/15 border-success text-success"
+                                            : "bg-error/15 border-error text-error"
+                                    }`}>
+                                        {submitResult.accepted ? (
+                                            <>
+                                                <FaCheckCircle className="text-5xl mx-auto mb-3" />
+                                                <h2 className="text-2xl font-bold">Accepted 🎉</h2>
+                                                <p className="text-sm mt-1 text-base-content/85">All test cases passed successfully!</p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <FaTimesCircle className="text-5xl mx-auto mb-3" />
+                                                <h2 className="text-2xl font-bold">Rejected ❌</h2>
+                                                <p className="text-sm mt-1 text-base-content/85">
+                                                    {submitResult.errorMessage?.includes("Compilation") ? "Compilation Error" : "Failed on some test cases"}
+                                                </p>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    <div className="stats stats-vertical sm:stats-horizontal shadow bg-base-100 border border-base-200">
+                                        <div className="stat place-items-center py-2 px-4">
+                                            <div className="stat-title text-xs">Passed</div>
+                                            <div className="stat-value text-base">{submitResult.passedTestCases ?? 0} / {submitResult.totalTestCases ?? 0}</div>
+                                        </div>
+                                        <div className="stat place-items-center py-2 px-4">
+                                            <div className="stat-title text-xs">Runtime</div>
+                                            <div className="stat-value text-base">{(submitResult.runtime ?? 0).toFixed(3)} s</div>
+                                        </div>
+                                        <div className="stat place-items-center py-2 px-4">
+                                            <div className="stat-title text-xs">Memory</div>
+                                            <div className="stat-value text-base">{submitResult.memory ?? 0} KB</div>
+                                        </div>
+                                    </div>
+
+                                    {submitResult.errorMessage && (
+                                        <div className="bg-neutral text-neutral-content p-3 rounded-lg border border-base-100 max-h-48 overflow-y-auto">
+                                            <div className="text-xs font-bold text-error flex items-center gap-1.5 mb-1">
+                                                <FaExclamationTriangle />
+                                                Diagnostics:
+                                            </div>
+                                            <pre className="text-xs whitespace-pre-wrap break-all">
+                                                {submitResult.errorMessage}
+                                            </pre>
+                                        </div>
                                     )}
                                 </div>
-
-                                <div className="stats stats-vertical sm:stats-horizontal shadow bg-base-100 border border-base-200">
-                                    <div className="stat place-items-center py-2 px-4">
-                                        <div className="stat-title text-xs">Passed</div>
-                                        <div className="stat-value text-base">{submitResult.passedTestCases} / {submitResult.totalTestCases}</div>
-                                    </div>
-                                    <div className="stat place-items-center py-2 px-4">
-                                        <div className="stat-title text-xs">Runtime</div>
-                                        <div className="stat-value text-base">{submitResult.runtime?.toFixed(3)} s</div>
-                                    </div>
-                                    <div className="stat place-items-center py-2 px-4">
-                                        <div className="stat-title text-xs">Memory</div>
-                                        <div className="stat-value text-base">{submitResult.memory} KB</div>
-                                    </div>
-                                </div>
-
-                                {submitResult.errorMessage && (
-                                    <div className="bg-neutral text-neutral-content p-3 rounded-lg border border-base-100 max-h-48 overflow-y-auto">
-                                        <div className="text-xs font-bold text-error flex items-center gap-1.5 mb-1">
-                                            <FaExclamationTriangle />
-                                            Diagnostics:
-                                        </div>
-                                        <pre className="text-xs whitespace-pre-wrap break-all">
-                                            {submitResult.errorMessage}
-                                        </pre>
-                                    </div>
-                                )}
-                            </div>
+                            )
                         )}
 
                         {/* Fallback if no result exists */}

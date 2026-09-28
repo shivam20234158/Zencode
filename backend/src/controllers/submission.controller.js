@@ -2,6 +2,7 @@ import Problem from "../models/problem.model.js";
 import Submission from "../models/submission.model.js";
 import User from "../models/user.model.js";
 import { executeCode } from "../utils/executionUtility.js";
+import { submissionQueue } from "../config/queue.js";
 
 export const runCode = async (req, res) => {
 
@@ -44,6 +45,7 @@ export const runCode = async (req, res) => {
     }
 
 };
+
 export const submitCode = async (req, res) => {
 
     try {
@@ -68,76 +70,88 @@ export const submitCode = async (req, res) => {
             });
         }
 
-        const result = await executeCode(
-            code,
-            language,
-            problem.hiddenTestCases
-        );
-
+        // 1. Create submission with "queued" status
         const submission = await Submission.create({
-
             userId,
-
             problemId,
-
             code,
-
             language,
-
-            status: result.success ? "accepted" : "wrong",
-
-            runtime: result.runtime,
-
-            memory: result.memory,
-
-            stdout: result.testResults
-                .map(test => test.stdout)
-                .join("\n"),
-
-            stderr: result.errorMessage || "",
-
-            compileOutput: result.testResults
-                .map(test => test.compile_output)
-                .filter(Boolean)
-                .join("\n"),
-
-            errorMessage: result.errorMessage || "",
-
-            testCasesPassed: result.testCasesPassed,
-
-            testCasesTotal: result.totalTestCases,
-
+            status: "queued",
+            testCasesTotal: problem.hiddenTestCases?.length || 0,
         });
 
-        if (result.success) {
+        // 2. Add job to BullMQ queue
+        await submissionQueue.add("execute-code", {
+            submissionId: submission._id.toString(),
+            userId: userId.toString(),
+            problemId: problemId.toString(),
+            code,
+            language,
+            testCases: problem.hiddenTestCases || [],
+        });
 
-            await User.findByIdAndUpdate(
-                userId,
-                {
-                    $addToSet: {
-                        problemSolved: problemId,
-                    },
-                }
-            );
+        // 3. Return 202 Accepted immediately
+        return res.status(202).json({
+            submissionId: submission._id,
+            status: "queued",
+            message: "Submission queued for execution",
+        });
 
+    } catch (err) {
+
+        return res.status(500).json({
+            message: err.message,
+        });
+
+    }
+
+};
+
+export const getSubmissionStatus = async (req, res) => {
+
+    try {
+
+        const { submissionId } = req.params;
+
+        if (!submissionId) {
+            return res.status(400).json({
+                message: "Submission ID is required",
+            });
         }
 
-        return res.status(201).json({
+        const submission = await Submission.findById(submissionId);
 
-            accepted: result.success,
+        if (!submission) {
+            return res.status(404).json({
+                message: "Submission not found",
+            });
+        }
 
+        if (submission.userId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                message: "Unauthorized access to submission",
+            });
+        }
+
+        if (submission.status === "queued" || submission.status === "processing") {
+            return res.status(200).json({
+                submissionId: submission._id,
+                status: submission.status,
+            });
+        }
+
+        return res.status(200).json({
             submissionId: submission._id,
-
-            passedTestCases: result.testCasesPassed,
-
-            totalTestCases: result.totalTestCases,
-
-            runtime: result.runtime,
-
-            memory: result.memory,
-
-            errorMessage: result.errorMessage,
-
+            status: submission.status,
+            accepted: submission.status === "accepted",
+            passedTestCases: submission.testCasesPassed,
+            totalTestCases: submission.testCasesTotal,
+            runtime: submission.runtime,
+            memory: submission.memory,
+            errorMessage: submission.errorMessage,
+            stdout: submission.stdout,
+            compileOutput: submission.compileOutput,
+            createdAt: submission.createdAt,
         });
 
     } catch (err) {
