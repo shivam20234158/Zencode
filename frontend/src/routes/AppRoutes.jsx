@@ -11,6 +11,10 @@ import Profile from "../pages/Profile";
 import Admin from "../pages/Admin";
 import NotFound from "../pages/NotFound";
 import ProtectedRoute from "../components/ProtectedRoute";
+import BattleLobby from "../pages/BattleLobby";
+import BattleWaiting from "../pages/BattleWaiting";
+import BattleArena from "../pages/BattleArena";
+import BattleResult from "../pages/BattleResult";
 
 function AppRoutes() {
     return (
@@ -30,6 +34,10 @@ function AppRoutes() {
                 {/* User Protected Routes */}
                 <Route element={<ProtectedRoute />}>
                     <Route path="/profile" element={<Profile />} />
+                    <Route path="/battle" element={<BattleLobby />} />
+                    <Route path="/battle/waiting/:roomCode" element={<BattleWaiting />} />
+                    <Route path="/battle/arena/:roomCode" element={<BattleArena />} />
+                    <Route path="/battle/result/:roomCode" element={<BattleResult />} />
                 </Route>
 
                 {/* Admin Protected Routes */}

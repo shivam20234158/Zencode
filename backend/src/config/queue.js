@@ -20,3 +20,13 @@ export const submissionQueue = new Queue("code-execution", {
         removeOnFail: 200,
     },
 });
+
+export const battleQueue = new Queue("battle-timeouts", {
+    connection: redisConnection,
+    defaultJobOptions: {
+        attempts: 2,
+        removeOnComplete: 100,
+        removeOnFail: 200,
+    },
+});
+

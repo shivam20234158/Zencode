@@ -51,6 +51,14 @@ const userSchema = new Schema(
             type: String,
             required: true,
         },
+
+        // ─── Battle Statistics ───
+        // Tracks how many 1v1 battles this user has won, lost, or drawn
+        battleStats: {
+            won:   { type: Number, default: 0 },
+            lost:  { type: Number, default: 0 },
+            drawn: { type: Number, default: 0 },
+        },
     },
     {
         timestamps: true,

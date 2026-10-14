@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axiosClient from "../utils/axiosClient";
-import { FaAward, FaFire, FaCheckCircle, FaChevronRight } from "react-icons/fa";
+import { FaAward, FaFire, FaCheckCircle, FaChevronRight, FaBolt, FaTrophy } from "react-icons/fa";
 import Loader from "./Loader";
 
 function Dashboard() {
     const [stats, setStats] = useState(null);
+    const [battleStats, setBattleStats] = useState({ won: 0, lost: 0, drawn: 0 });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -15,13 +16,16 @@ function Dashboard() {
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
-            const [solvedRes, allRes] = await Promise.all([
+            const [solvedRes, allRes, battleRes] = await Promise.all([
                 axiosClient.get("/submissions/solved"),
                 axiosClient.get("/problems"),
+                axiosClient.get("/battles/user/stats").catch(() => ({ data: { stats: { won: 0, lost: 0, drawn: 0 } } })),
             ]);
 
             const solvedProblems = solvedRes.data || [];
             const allProblems = allRes.data.problems || [];
+            const bStats = battleRes.data?.stats || { won: 0, lost: 0, drawn: 0 };
+            setBattleStats(bStats);
 
             // Calculate difficulty counts
             const totalCount = allProblems.length;
@@ -150,6 +154,44 @@ function Dashboard() {
                                 className="bg-error h-full transition-all duration-1000 ease-out rounded-full"
                                 style={{ width: `${hardPercentage}%` }}
                             />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* 1v1 Battle Record */}
+            <div className="card bg-base-100 border border-base-300 shadow-sm p-6">
+                <div className="flex items-center justify-between border-b pb-3 mb-4">
+                    <h4 className="text-lg font-bold flex items-center gap-2">
+                        <FaBolt className="text-warning" />
+                        <span>1v1 Coding Battle Record</span>
+                    </h4>
+                    <Link to="/battle" className="btn btn-xs btn-primary gap-1">
+                        <span>Enter Arena</span>
+                        <FaChevronRight className="text-xs" />
+                    </Link>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                    <div className="bg-base-200/50 rounded-xl p-3 border border-base-300/40">
+                        <div className="text-xs text-base-content/60 font-semibold uppercase">Won</div>
+                        <div className="text-2xl font-black text-success mt-1">{battleStats.won}</div>
+                    </div>
+                    <div className="bg-base-200/50 rounded-xl p-3 border border-base-300/40">
+                        <div className="text-xs text-base-content/60 font-semibold uppercase">Lost</div>
+                        <div className="text-2xl font-black text-error mt-1">{battleStats.lost}</div>
+                    </div>
+                    <div className="bg-base-200/50 rounded-xl p-3 border border-base-300/40">
+                        <div className="text-xs text-base-content/60 font-semibold uppercase">Drawn</div>
+                        <div className="text-2xl font-black text-warning mt-1">{battleStats.drawn}</div>
+                    </div>
+                    <div className="bg-base-200/50 rounded-xl p-3 border border-base-300/40">
+                        <div className="text-xs text-base-content/60 font-semibold uppercase">Win Rate</div>
+                        <div className="text-2xl font-black text-primary mt-1">
+                            {battleStats.won + battleStats.lost + battleStats.drawn > 0
+                                ? Math.round((battleStats.won / (battleStats.won + battleStats.lost + battleStats.drawn)) * 100)
+                                : 0}
+                            %
                         </div>
                     </div>
                 </div>

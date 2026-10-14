@@ -3,7 +3,10 @@ import Redis from "ioredis";
 import dotenv from "dotenv";
 import Submission from "../models/submission.model.js";
 import User from "../models/user.model.js";
+import Battle from "../models/battle.model.js";
 import { executeCode } from "../utils/executionUtility.js";
+import * as battleService from "../services/battle.service.js";
+import { emitToBattle } from "../socket/battleSocket.js";
 
 dotenv.config();
 
@@ -71,6 +74,46 @@ export const startWorker = () => {
                             problemSolved: problemId,
                         },
                     });
+                }
+
+                // Battle real-time progress & winner finalization
+                if (job.data.battleId) {
+                    try {
+                        const { battleId } = job.data;
+                        const battle = await Battle.findById(battleId);
+                        if (battle && battle.status === "active") {
+                            if (result.success) {
+                                const finalized = await battleService.tryFinalizeWinner(
+                                    battleId,
+                                    userId,
+                                    submissionId
+                                );
+                                if (finalized) {
+                                    emitToBattle(battle.roomCode, "battle-ended", {
+                                        winner: finalized.winner,
+                                        isDraw: false,
+                                        battle: finalized,
+                                    });
+                                }
+                            } else {
+                                await battleService.recordPlayerSubmission(
+                                    battleId,
+                                    userId,
+                                    submissionId,
+                                    "failed"
+                                );
+                            }
+
+                            emitToBattle(battle.roomCode, "opponent-progress", {
+                                userId,
+                                status: result.success ? "accepted" : "failed",
+                                testCasesPassed: result.testCasesPassed || 0,
+                                testCasesTotal: result.totalTestCases || 0,
+                            });
+                        }
+                    } catch (battleErr) {
+                        console.error("[Worker] Battle handling error:", battleErr.message);
+                    }
                 }
 
                 console.log(

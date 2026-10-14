@@ -1,9 +1,11 @@
-// Server start karega aur database connect karega.
-
+import http from "http";
 import dotenv from "dotenv";
 import app from "./app.js";
 import connectDB from "./config/db.js";
 import { startWorker } from "./workers/submission.worker.js";
+import { startBattleTimeoutWorker } from "./workers/battleTimeout.worker.js";
+import { initSocket } from "./config/socket.js";
+import { setupBattleSocket } from "./socket/battleSocket.js";
 import { fileURLToPath } from "url";
 import path from "path";
 import express from "express";
@@ -23,11 +25,17 @@ if (process.env.NODE_ENV === "production") {
         res.sendFile(path.join(frontendPath, "index.html"));
     });
 }
+
+const httpServer = http.createServer(app);
+const io = initSocket(httpServer);
+setupBattleSocket(io);
+
 const startServer = async () => {
     try {
         await connectDB();
         startWorker();
-        app.listen(PORT, () => {
+        startBattleTimeoutWorker();
+        httpServer.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
         });
     } catch (error) {

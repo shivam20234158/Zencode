@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutUser } from "../store/authSlice";
 import { useTheme } from "../context/ThemeContext";
-import { FaSun, FaMoon, FaCode } from "react-icons/fa";
+import { FaSun, FaMoon, FaCode, FaBolt } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 function Navbar() {
@@ -49,6 +49,14 @@ function Navbar() {
                     className="btn btn-ghost"
                 >
                     Problems
+                </Link>
+
+                <Link
+                    to="/battle"
+                    className="btn btn-ghost text-primary font-bold gap-1.5"
+                >
+                    <FaBolt className="text-warning animate-pulse" />
+                    <span>1v1 Battle</span>
                 </Link>
 
                 {isAuthenticated && user?.role === "admin" && (
